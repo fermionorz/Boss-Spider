@@ -3,14 +3,12 @@
 Created on 2022-10-20 04:36:10
 @author: Zer-hex
 """
-import json
 from time import sleep
 import pandas as pd
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 import undetected_chromedriver as uc
 from config import *
+
 
 def main():
     login()
@@ -18,11 +16,13 @@ def main():
     for search_url in search_lists:
         get_jobs_lists(*search_url)
 
+
 def login():
     browser.get('https://login.zhipin.com/')
-    print("[+] 你有15秒的时间扫码登录boss制直聘")
+    print("[+] 你有15秒的时间扫码登录boss直聘")
     sleep(15)
     browser.refresh()
+
 
 def get_search_lists():
     urls = []
@@ -31,13 +31,19 @@ def get_search_lists():
             url = f'https://www.zhipin.com/web/geek/job?query={job}&city={city_code}&experience={experience}&degree={degree}'
             urls.append((url, f"{citys[city_code]}_{job}.xlsx"))
     return urls
+
+
 def get_jobs_lists(search_url, name):
     browser.get(search_url)
     sleep(2)
-    browser.execute_script("window.scrollTo(0, document.body.scrollHeight)");   # 滚到底端
-    sleep(1)
-    page_num_tags = browser.find_elements(By.XPATH, '//*[@id="wrap"]/div[2]/div[2]/div/div[1]/div[1]/div/div/div/a')
-    page_num = int(page_num_tags[-2].text)
+    browser.execute_script("window.scrollTo(0, document.body.scrollHeight)")   # 滚到底端
+    sleep(2)
+    page_num_tags = browser.find_elements(By.XPATH, '//*[@id="wrap"]/div[2]/div[2]/div/div[1]/div[2]/div/div/div/a')
+    print(f"[+] 捕获页码标签,长度: {len(page_num_tags)}")
+    if len(page_num_tags) > 3:
+        page_num = int(page_num_tags[-2].text)
+    else:
+        page_num = 1
     print(f"[+] 信息共{page_num}页, Url: {search_url}")
     for page in range(page_num):
         print(f"[+] 正在爬取第{page+1}页.")
@@ -82,6 +88,7 @@ def get_jobs_lists(search_url, name):
             info['位置'].append(addr)
         save_data(name, pd.DataFrame(info))
 
+
 def save_data(name: str, new_data: dict):
     try:
         data = pd.read_excel(name)
@@ -100,6 +107,7 @@ def save_data(name: str, new_data: dict):
         })
     save = pd.concat([data, new_data], axis=0)
     save.to_excel(name, index=False)
+
 
 if __name__ == '__main__':
     options = uc.ChromeOptions()  # 创建Chrome参数对象
